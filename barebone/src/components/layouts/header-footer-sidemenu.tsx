@@ -1,21 +1,23 @@
-import "../../index.css";
+import CrudTable from "../../pages/crudTable";
+import Footer from "../footer/footer";
 import Header from "../header/header";
-
+import IndexWithImage from "../../pages/indexWithImage";
 function LayoutHeaderFooterSideMenu() {
 	return (
-		<>
-			<div className="w-full h-auto m-0 p-0">
-				<Header />
-				<div className="w-full h-full m-0 p-0 flex flex-row">
-					<nav className="w-auto h-full p-2 bg-slate-400">sidenav</nav>
-					<main className="w-full h-full p-2 bg-green-500">main</main>
-				</div>
-
-				<footer className="w-full h-auto p-2 bg-gray-700 flex-none">
-					footer
-				</footer>
+		<div className="flex flex-col">
+			<Header />
+			<div className="flex flex-row">
+				<nav className="hidden sm:hidden md:flex w-auto h-full bg-neutral-400">
+					sidenav
+				</nav>
+				<main className="w-full h-full bg-neutral-600">
+					{/* <IndexWithImage /> */}
+					<CrudTable />
+				</main>
 			</div>
-		</>
+
+			<Footer />
+		</div>
 	);
 }
 
