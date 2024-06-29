@@ -1,0 +1,27 @@
+{
+  "name": "y",
+  "version": "0.0.1",
+  "description": "react based site template",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kenny619/react-barebone.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Kenny619/react-barebone/issues"
+  },
+  "homepage": "https://github.com/Kenny619/react-barebone#readme",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.2",
+    "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-brands-svg-icons": "^6.5.2",
+    "@fortawesome/free-regular-svg-icons": "^6.5.2",
+    "@fortawesome/free-solid-svg-icons": "^6.5.2",
+    "@fortawesome/react-fontawesome": "^0.2.2"
+  }
+}
