@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 //fetch data
 const res = await fetch("https://dummyjson.com/recipes");
@@ -14,10 +14,16 @@ columns.push(controlName);
 const TextInput = (props: {
 	id: number;
 	colName: string;
+	placeholder: string;
 	defaultVal: string;
 	tableData: { [key: string]: string | number }[];
 	setTableData: (data: { [key: string]: string | number }) => void;
 	setEditId: (id: number) => void;
+	setToast: (toast: {
+		mode: string;
+		originalRow: { [key: string]: string | number };
+		edited: { colName: string; val: string };
+	}) => void;
 }) => {
 	//edited string
 	const [input, setInput] = useState(props.defaultVal);
@@ -25,6 +31,7 @@ const TextInput = (props: {
 		<input
 			type="text"
 			value={input}
+			placeholder={props.placeholder}
 			className="w-full p-2 bg-slate-100 text-slate-700"
 			onChange={(e) => setInput(e.target.value)}
 			onBlur={() =>
@@ -33,6 +40,7 @@ const TextInput = (props: {
 					props.tableData,
 					props.setTableData,
 					props.setEditId,
+					props.setToast,
 				)
 			}
 		/>
@@ -44,6 +52,11 @@ const SaveUpdate = (
 	tableData: { [key: string]: string | number }[],
 	setTableData: (data: { [key: string]: string | number }) => void,
 	setEditId: (id: number) => void,
+	setToast: (toast: {
+		mode: string;
+		originalRow: { [key: string]: string | number };
+		edited: { colName: string; val: string };
+	}) => void,
 ) => {
 	//apply new value to the tableData
 	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
@@ -56,6 +69,13 @@ const SaveUpdate = (
 
 	setTableData(newTableData);
 	setEditId(0);
+	setToast({
+		mode: "edit",
+		originalRow: tableData.find((row) => row.id === edited.id) as {
+			[key: string]: string | number;
+		},
+		edited: edited,
+	});
 };
 
 const DeleteEntry = (
@@ -76,13 +96,28 @@ const CrudTable = () => {
 		originalRow: {} as { [key: string]: string | number },
 		edited: { colName: "", val: "" },
 	});
-
 	const Toast = () => {
+		const timeoutRef = useRef<number | null>(null);
+		useEffect(() => {
+			timeoutRef.current = window.setTimeout(() => {
+				setToast({
+					mode: null,
+					originalRow: {},
+					edited: { colName: "", val: "" },
+				});
+			}, 3000);
+			return () => {
+				if (timeoutRef.current) {
+					clearTimeout(timeoutRef.current);
+				}
+			};
+		}, []);
+
 		return (
 			<div className="toast toast-bottom toast-start">
-				<div className="alert alert-success">
+				<div className="alert alert-info rounded-sm">
 					{toast.mode === "edit"
-						? `Updated ${toast.edited.colName} from ${toast.originalRow[toast.edited.colName]} to ${toast.edited.val}`
+						? `${toast.edited.colName} updated to ${toast.edited.val}`
 						: `Deleted row with id ${toast.originalRow.id}`}
 				</div>
 			</div>
@@ -97,9 +132,21 @@ const CrudTable = () => {
 			<h1 className="text-2xl font-bold m-8">Repatroire</h1>
 
 			{/*-- new entry --*/}
+			<div className="w-1/3 p-2 m-2">
+				<TextInput
+					id={tableData.length + 1}
+					placeholder="Add new entry"
+					colName="name"
+					defaultVal=""
+					tableData={tableData}
+					setTableData={setTableData}
+					setToast={setToast}
+					setEditId={setEditId}
+				/>
+			</div>
 
-			<div className="w-full overflow-x-auto">
-				<table className="table m-2 p-2 bg-gray-600 rounded-none">
+			<div className="w-fit p-2 m-2 ">
+				<table className="table bg-gray-600 rounded-none">
 					{/* table header */}
 					<thead>
 						<tr>
@@ -136,11 +183,13 @@ const CrudTable = () => {
 										<td key={col} className="w-auto">
 											<TextInput
 												id={recipe.id as number}
+												placeholder=""
 												colName={col}
 												defaultVal={recipe[col] as string}
 												tableData={tableData}
 												setTableData={setTableData}
 												setEditId={setEditId}
+												setToast={setToast}
 											/>
 										</td>
 									) : (
