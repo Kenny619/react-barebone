@@ -5,11 +5,48 @@ import { useState, useEffect, useRef } from "react";
 const res = await fetch("https://dummyjson.com/recipes");
 const data = await res.json();
 const recipes = data.recipes;
-
+console.log("recipes loaded");
 //columns to be displayed
 const columns = ["id", "name"];
 const controlName = "control";
 columns.push(controlName);
+
+/* 
+
+receive input
+
+
+make action
+ create
+  id
+  value
+  whole data
+  mode
+ update
+  id
+  new value
+  old value
+  whole data
+  mode
+ delete
+  id
+  old value
+  whole data
+  mode
+ undo create
+  id
+  whole data
+ undo update
+  id
+  old value
+  whole data
+ undo delete
+  id
+  old value
+  whole data
+show toast
+
+*/
 
 const TextInput = (props: {
 	id: number;
@@ -92,16 +129,17 @@ const CrudTable = () => {
 	const [tableData, setTableData] = useState(recipes);
 
 	const [toast, setToast] = useState({
-		mode: null,
+		mode: "",
 		originalRow: {} as { [key: string]: string | number },
 		edited: { colName: "", val: "" },
 	});
+
 	const Toast = () => {
 		const timeoutRef = useRef<number | null>(null);
 		useEffect(() => {
 			timeoutRef.current = window.setTimeout(() => {
 				setToast({
-					mode: null,
+					mode: "",
 					originalRow: {},
 					edited: { colName: "", val: "" },
 				});
@@ -140,7 +178,7 @@ const CrudTable = () => {
 					defaultVal=""
 					tableData={tableData}
 					setTableData={setTableData}
-					setToast={setToast}
+					setToast={(toast) => setToast({ ...toast, mode: "create" })}
 					setEditId={setEditId}
 				/>
 			</div>
