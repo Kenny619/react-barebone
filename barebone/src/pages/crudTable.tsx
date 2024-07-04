@@ -1,10 +1,10 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useReducer } from "react";
 
 //fetch data
 const res = await fetch("https://dummyjson.com/recipes");
 const data = await res.json();
-const recipes = data.recipes;
+const recipes: { [key: string]: string | number }[] = data.recipes;
 console.log("recipes loaded");
 //columns to be displayed
 const columns = ["id", "name"];
@@ -48,142 +48,276 @@ show toast
 
 */
 
-const TextInput = (props: {
+const crudReducer = (
+	tableData: tableData,
+	{ type, payload }: { type: string; payload: payload },
+) => {
+	switch (type) {
+		case "create": {
+			const newRow: { [key: string]: string | number } = {
+				id:
+					Math.max(
+						...tableData.map((row) => Number.parseInt(row.id as string)),
+					) + 1,
+			};
+			newRow[payload.colName] = payload.newVal;
+			tableData.push(newRow);
+
+			//display toast
+			payload.hooks.setToastPayload({
+				mode: "create",
+				id: newRow.id,
+				colName: "",
+				newVal: payload.newVal,
+				oldVal: "",
+			});
+			payload.hooks.setShowToast(true);
+
+			return [...tableData];
+		}
+		case "update": {
+			for (const row of tableData) {
+				if (row.id === payload.id) {
+					row[payload.colName] = payload.newVal;
+					break;
+				}
+			}
+			payload.hooks.setEditId(0);
+
+			//display toast
+			payload.hooks.setToastPayload({
+				mode: "update",
+				id: payload.id,
+				colName: payload.colName,
+				newVal: payload.newVal,
+				oldVal: payload.oldVal,
+			});
+			payload.hooks.setShowToast(true);
+			return [...tableData];
+		}
+
+		case "delete": {
+			//display toast
+			payload.hooks.setToastPayload({
+				mode: "delete",
+				id: payload.id,
+				colName: "",
+				newVal: "",
+				oldVal: payload.oldVal,
+				backup: payload.backupData,
+			});
+			payload.hooks.setShowToast(true);
+			return [...tableData.filter((row) => row.id !== payload.id)];
+		}
+
+		case "undoCreate": {
+			return [...tableData.filter((row) => row.id !== payload.id)];
+		}
+
+		case "undoUpdate": {
+			for (const row of tableData) {
+				if (row.id === payload.id) {
+					row[payload.colName] = payload.oldVal;
+					break;
+				}
+			}
+			return [...tableData];
+		}
+		case "undoDelete": {
+			const newRow: { [key: string]: string | number } = {
+				id: payload.id,
+			};
+			newRow[payload.colName] = payload.newVal;
+			tableData.push({ id: payload.id });
+			return [...tableData.filter((row) => row.id !== payload.id)];
+		}
+		default:
+			return tableData;
+	}
+};
+
+const TextInput = ({
+	mode,
+	id,
+	colName,
+	placeholder,
+	defaultVal,
+	dispatch,
+	hooks,
+}: {
+	mode: string;
 	id: number;
 	colName: string;
 	placeholder: string;
 	defaultVal: string;
-	tableData: { [key: string]: string | number }[];
-	setTableData: (data: { [key: string]: string | number }) => void;
-	setEditId: (id: number) => void;
-	setToast: (toast: {
-		mode: string;
-		originalRow: { [key: string]: string | number };
-		edited: { colName: string; val: string };
-	}) => void;
+	dispatch: (action: { type: string; payload: payload }) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	hooks: { [key: string]: (...args: any) => void };
 }) => {
-	//edited string
-	const [input, setInput] = useState(props.defaultVal);
+	//input string state
+	const [input, setInput] = useState(defaultVal);
+
 	return (
 		<input
 			type="text"
 			value={input}
-			placeholder={props.placeholder}
+			placeholder={placeholder}
 			className="w-full p-2 bg-slate-100 text-slate-700"
 			onChange={(e) => setInput(e.target.value)}
-			onBlur={() =>
-				SaveUpdate(
-					{ id: props.id, colName: props.colName, val: input },
-					props.tableData,
-					props.setTableData,
-					props.setEditId,
-					props.setToast,
-				)
-			}
+			onBlur={() => {
+				dispatch({
+					type: mode,
+					payload: {
+						id: id,
+						colName: colName,
+						newVal: input,
+						oldVal: defaultVal,
+						hooks: hooks,
+					},
+				});
+				setInput("");
+			}}
 		/>
 	);
 };
 
-const SaveUpdate = (
-	edited: { id: number; colName: string; val: string },
-	tableData: { [key: string]: string | number }[],
-	setTableData: (data: { [key: string]: string | number }) => void,
-	setEditId: (id: number) => void,
-	setToast: (toast: {
+const Toast = ({
+	mode,
+	id,
+	colName,
+	newVal,
+	oldVal,
+	backup = null,
+	setShowToast,
+	setToastPayload,
+}: {
+	mode: string;
+	id: number;
+	colName: string;
+	newVal: string;
+	oldVal: string;
+	backup: tableData | null;
+	setShowToast: (showToast: boolean) => void;
+	setToastPayload: (toastPayload: {
 		mode: string;
-		originalRow: { [key: string]: string | number };
-		edited: { colName: string; val: string };
-	}) => void,
-) => {
-	//apply new value to the tableData
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-	const newTableData = tableData.reduce((acc: any, row) => {
-		row[edited.colName] =
-			row.id === edited.id ? edited.val : row[edited.colName];
-		acc.push(row);
-		return acc;
-	}, []);
+		id: number;
+		colName: string;
+		newVal: string;
+		oldVal: string;
+	}) => void;
+}) => {
+	// const timeoutRef = useRef<number | null>(null);
+	const intervalRef = useRef<number | null>(null);
+	const [progress, setProgress] = useState(100);
 
-	setTableData(newTableData);
-	setEditId(0);
-	setToast({
-		mode: "edit",
-		originalRow: tableData.find((row) => row.id === edited.id) as {
-			[key: string]: string | number;
-		},
-		edited: edited,
+	/*
+	useEffect(() => {
+		intervalRef.current = window.setInterval(() => {
+			setProgress((prev) => prev - 1);
+			if (progress <= 0) {
+				setShowToast(false);
+				setToastPayload({
+					mode: "",
+					id: 0,
+					colName: "",
+					newVal: "",
+					oldVal: "",
+				});
+				clearInterval(intervalRef.current as number);
+			}
+		}, 30);
+		return () => {
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+			}
+		};
 	});
-};
+*/
+	//message & styles
+	const message = {
+		create: `Added id:${id} to the list.`,
+		update: `id:${id} updated column ${colName} from ${oldVal} to ${newVal}.`,
+		delete: `Deleted id:${id} "${oldVal}"`,
+	};
 
-const DeleteEntry = (
-	id: number,
-	tableData: { [key: string]: string | number }[],
-	setTableData: (data: { [key: string]: string | number }[]) => void,
-) => {
-	const newTableData = tableData.filter((row) => row.id !== id);
-	setTableData(newTableData);
+	const style = {
+		create: "alert-success",
+		update: "alert-info",
+		delete: "alert-warning",
+	};
+
+	return (
+		<div className="toast toast-bottom toast-start text-sm w-fit rounded-sm">
+			<div className=" rounded-sm bg-slate-300 text-slate-900 h-auto p-4">
+				<div className="flex gap-4 justify-items-center align-middle justify-center">
+					<div className="">{message[mode as keyof typeof message]}</div>
+					<div className="">
+						<button type="button" className="btn">
+							UNDO
+						</button>
+					</div>
+				</div>
+				<div className="w-full m-0 p-0">
+					<progress
+						className="progress progress-accent w-full h-4 mx-0 mt-4 mb-0"
+						value={progress}
+						max="100"
+					/>
+				</div>
+			</div>
+		</div>
+	);
 };
 
 const CrudTable = () => {
 	//store the data into a state
-	const [tableData, setTableData] = useState(recipes);
+	//const [tableData, setTableData] = useState(recipes);
 
-	const [toast, setToast] = useState({
-		mode: "",
-		originalRow: {} as { [key: string]: string | number },
-		edited: { colName: "", val: "" },
-	});
-
-	const Toast = () => {
-		const timeoutRef = useRef<number | null>(null);
-		useEffect(() => {
-			timeoutRef.current = window.setTimeout(() => {
-				setToast({
-					mode: "",
-					originalRow: {},
-					edited: { colName: "", val: "" },
-				});
-			}, 3000);
-			return () => {
-				if (timeoutRef.current) {
-					clearTimeout(timeoutRef.current);
-				}
-			};
-		}, []);
-
-		return (
-			<div className="toast toast-bottom toast-start">
-				<div className="alert alert-info rounded-sm">
-					{toast.mode === "edit"
-						? `${toast.edited.colName} updated to ${toast.edited.val}`
-						: `Deleted row with id ${toast.originalRow.id}`}
-				</div>
-			</div>
-		);
-	};
+	//CRUD action fn.
+	//manage the state of tableData displayed on the screen
+	const [tableData, dispatch] = useReducer(crudReducer, recipes);
 
 	//edit mode
 	const [editId, setEditId] = useState(0);
 
+	//reset add entry input to blank
+	const [defaultVal, setDefaultVal] = useState("");
+
+	//display toast
+	const [showToast, setShowToast] = useState(false);
+	const [toastPayload, setToastPayload] = useState({
+		mode: "",
+		id: 0,
+		colName: "",
+		newVal: "",
+		oldVal: "",
+	});
+
+	//backup tableData for undoDelete
+	const backupTableData = useRef(tableData);
+
 	return (
 		<>
-			<h1 className="text-2xl font-bold m-8">Repatroire</h1>
+			<h1 className="text-2xl font-bold my-8 mx-4">Repatroire</h1>
 
 			{/*-- new entry --*/}
-			<div className="w-1/3 p-2 m-2">
+			<div className="w-1/2 m-4">
 				<TextInput
-					id={tableData.length + 1}
+					mode="create"
+					id={0} //recalculate id in reducer fn
 					placeholder="Add new entry"
 					colName="name"
-					defaultVal=""
-					tableData={tableData}
-					setTableData={setTableData}
-					setToast={(toast) => setToast({ ...toast, mode: "create" })}
-					setEditId={setEditId}
+					defaultVal={defaultVal}
+					dispatch={dispatch}
+					hooks={{
+						setDefaultVal: setDefaultVal,
+						setShowToast: setShowToast,
+						setToastPayload: setToastPayload,
+					}}
 				/>
 			</div>
 
-			<div className="w-fit p-2 m-2 ">
+			<div className="w-fit m-4 ">
 				<table className="table bg-gray-600 rounded-none">
 					{/* table header */}
 					<thead>
@@ -201,7 +335,7 @@ const CrudTable = () => {
 								{columns.map((col) => {
 									if (col === "control") {
 										return (
-											<td key={`${recipes.id}-${col}`}>
+											<td key={`${recipe.id}-${col}`}>
 												<button
 													onClick={() => setEditId(recipe.id as number)}
 													type="button"
@@ -211,7 +345,26 @@ const CrudTable = () => {
 														<FontAwesomeIcon icon={["fas", "pen"]} />
 													)}
 												</button>
-												<button type="button" className="px-2 text-red-300">
+												<button
+													onClick={() =>
+														dispatch({
+															type: "delete",
+															payload: {
+																id: recipe.id as number,
+																colName: "",
+																newVal: "",
+																oldVal: recipe.name as string,
+																backupData: backupTableData.current,
+																hooks: {
+																	setShowToast: setShowToast,
+																	setToastPayload: setToastPayload,
+																},
+															},
+														})
+													}
+													type="button"
+													className="px-2 text-red-300"
+												>
 													<FontAwesomeIcon icon={["fas", "trash"]} />
 												</button>
 											</td>
@@ -220,18 +373,21 @@ const CrudTable = () => {
 									return col !== "id" && recipe.id === editId ? (
 										<td key={col} className="w-auto">
 											<TextInput
+												mode="update"
 												id={recipe.id as number}
 												placeholder=""
 												colName={col}
 												defaultVal={recipe[col] as string}
-												tableData={tableData}
-												setTableData={setTableData}
-												setEditId={setEditId}
-												setToast={setToast}
+												dispatch={dispatch}
+												hooks={{
+													setEditId: setEditId,
+													setShowToast: setShowToast,
+													setToastPayload: setToastPayload,
+												}}
 											/>
 										</td>
 									) : (
-										<td key={col} className="w-auto">
+										<td key={`${recipe.id}-${col}`} className="w-auto">
 											{recipe[col]}
 										</td>
 									);
@@ -241,7 +397,17 @@ const CrudTable = () => {
 					</tbody>
 				</table>
 			</div>
-			{toast.mode && <Toast />}
+			{showToast && (
+				<Toast
+					mode={toastPayload.mode}
+					id={toastPayload.id}
+					colName={toastPayload.colName}
+					newVal={toastPayload.newVal}
+					oldVal={toastPayload.oldVal}
+					setShowToast={setShowToast}
+					setToastPayload={setToastPayload}
+				/>
+			)}
 		</>
 	);
 };
