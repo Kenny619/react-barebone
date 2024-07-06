@@ -1,3 +1,17 @@
+//Toast
+
+type ToastProps = {
+	toastId: number;
+	close: boolean;
+	customButton: boolean;
+	timer: {
+		enabled: boolean;
+		remain: number;
+	};
+	element: Element;
+};
+
+// CRUD Table
 type tableData = { [key: string]: string | number }[];
 type payload = {
 	id: number;
