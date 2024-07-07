@@ -240,12 +240,6 @@ const Toast = ({
 		delete: `Deleted id:${id} "${oldVal}"`,
 	};
 
-	const style = {
-		create: "alert-success",
-		update: "alert-info",
-		delete: "alert-warning",
-	};
-
 	return (
 		<div className="toast toast-bottom toast-start text-sm w-fit rounded-sm">
 			<div className=" rounded-sm bg-slate-300 text-slate-900 h-auto p-4">
