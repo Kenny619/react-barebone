@@ -6,15 +6,16 @@ const globalContext = createContext(globalStates);
 
 function GlobalContextProvider({ children }: { children: React.ReactNode }) {
 	//////////////////////////refs
-	const toastTimeoutSecRef = useRef(3000); //toast timeout in miliseconds
+	const toastTimeoutSecRef = useRef(4000); //toast timeout in miliseconds
 
 	//////////////////////////states
 
 	//toast management
 	//stores active toast objects in an array
-	const [toasts, setToasts] = useState([]);
+	const [toastId, setToastId] = useState(0);
+	const [toasts, setToasts] = useState([] as ToastProps[]);
 
-	globalStates = { toasts, setToasts, toastTimeoutSecRef };
+	globalStates = { toasts, setToasts, toastTimeoutSecRef, toastId, setToastId };
 
 	return (
 		<globalContext.Provider value={globalStates}>

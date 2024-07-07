@@ -1,8 +1,10 @@
-import LayoutHeaderFooterSideMenu from "./components/layouts/header-footer-sidemenu.tsx";
-function Layout() {
+//import { Routes, Route } from "react-router-dom";
+import DefaultLayout from "./components/layouts/defaultLayout.tsx";
+
+function Layout(props: { children: React.ReactNode }) {
 	return (
 		<>
-			<LayoutHeaderFooterSideMenu />
+			<DefaultLayout>{props.children}</DefaultLayout>
 		</>
 	);
 }

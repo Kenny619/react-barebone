@@ -2,13 +2,13 @@
 
 type ToastProps = {
 	toastId: number;
-	close: boolean;
-	customButton: boolean;
+	closeButton: boolean;
 	timer: {
 		enabled: boolean;
 		remain: number;
 	};
-	element: Element;
+	text: string | null;
+	element: React.ReactNode | null;
 };
 
 // CRUD Table
