@@ -1,15 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-	useState,
-	useEffect,
-	useRef,
-	useReducer,
-	createContext,
-	useContext,
-} from "react";
-
-import TitleText from "../components/elements/TitleText";
-import LeadText from "../components/elements/LeadText";
+import { useState, useEffect, useRef, useReducer } from "react";
 
 //fetch data
 const res = await fetch("https://dummyjson.com/recipes");
@@ -18,103 +8,117 @@ const recipes: { [key: string]: string | number }[] = data.recipes;
 console.log("recipes loaded");
 //columns to be displayed
 const columns = ["id", "name"];
-const editableColumn = "name";
 const controlName = "control";
 columns.push(controlName);
 
-//create context
-const CRUDtableContext = createContext<Partial<singleColumnCRUDTableContext>>(
-	{},
-);
+const crudReducer = (
+	tableData: tableData,
+	{ type, payload }: { type: string; payload: payload },
+) => {
+	switch (type) {
+		case "create": {
+			const newRow: { [key: string]: string | number } = {
+				id:
+					Math.max(
+						...tableData.map((row) => Number.parseInt(row.id as string)),
+					) + 1,
+			};
+			newRow[payload.colName] = payload.newVal;
+			tableData.push(newRow);
 
-const ContextStore = (props: { children: React.ReactNode }) => {
-	//manage the state of tableData displayed on the screen
-	const [tableData, dispatch] = useReducer(CRUDReducer, recipes);
+			//display toast
+			payload.hooks.setToastPayload({
+				mode: "create",
+				id: newRow.id,
+				colName: "",
+				newVal: payload.newVal,
+				oldVal: "",
+			});
+			payload.hooks.setShowToast(true);
 
-	//edit mode
-	//open text field when id is set
-	const [editId, setEditId] = useState(0);
+			return [...tableData];
+		}
+		case "update": {
+			for (const row of tableData) {
+				if (row.id === payload.id) {
+					row[payload.colName] = payload.newVal;
+					break;
+				}
+			}
+			payload.hooks.setEditId(0);
 
-	//reset add entry input to blank
-	//const [defaultVal, setDefaultVal] = useState("");
-	const [textInput, setTextInput] = useState("");
+			//display toast
+			payload.hooks.setToastPayload({
+				mode: "update",
+				id: payload.id,
+				colName: payload.colName,
+				newVal: payload.newVal,
+				oldVal: payload.oldVal,
+			});
+			payload.hooks.setShowToast(true);
+			return [...tableData];
+		}
 
-	//display toast
-	const [showToast, setShowToast] = useState(false);
+		case "delete": {
+			//display toast
+			payload.hooks.setToastPayload({
+				mode: "delete",
+				id: payload.id,
+				colName: "",
+				newVal: "",
+				oldVal: payload.oldVal,
+				backup: payload.backupData,
+			});
+			payload.hooks.setShowToast(true);
+			return [...tableData.filter((row) => row.id !== payload.id)];
+		}
 
-	//manage multiple toasts
-	const [toastElements, setToastElements] = useState([]);
+		case "undoCreate": {
+			return [...tableData.filter((row) => row.id !== payload.id)];
+		}
 
-	//manage payload of crud actions
-	const [crudQueue, setCrudQueue] = useState([] as payload[]);
-
-	//keep track of crudId used in payload
-	const [crudId, setCrudId] = useState(0);
-
-	//backup tableData for undoDelete
-	const tableDataRef = useRef(tableData);
-
-	//create context parameters
-	const contextObj = {
-		crudId,
-		setCrudId,
-		tableData,
-		dispatch,
-		editId,
-		setEditId,
-		textInput,
-		setTextInput,
-		showToast,
-		setShowToast,
-		toastElements,
-		setToastElements,
-		tableDataRef,
-		crudQueue,
-		setCrudQueue,
-	};
-
-	return (
-		<CRUDtableContext.Provider value={contextObj}>
-			{props.children}
-		</CRUDtableContext.Provider>
-	);
+		case "undoUpdate": {
+			for (const row of tableData) {
+				if (row.id === payload.id) {
+					row[payload.colName] = payload.oldVal;
+					break;
+				}
+			}
+			return [...tableData];
+		}
+		case "undoDelete": {
+			const newRow: { [key: string]: string | number } = {
+				id: payload.id,
+			};
+			newRow[payload.colName] = payload.newVal;
+			tableData.push({ id: payload.id });
+			return [...tableData.filter((row) => row.id !== payload.id)];
+		}
+		default:
+			return tableData;
+	}
 };
 
-function CRUDTable() {
-	return (
-		<>
-			<ContextStore>
-				<TitleText title="Repatroire" />
-				<LeadText leadText="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed ut diam eget libero. Nulla facilisi. Duis aliquam turpis nunc, at euismod nunc euismod sit amet. Sed ut diam eget libero. Nulla facilisi. Duis aliquam turpis nunc, at euismod nunc euismod sit amet." />
-				<TextInput placeholder="Add new entry" />
-				<SingleColumnCRUDTable />
-			</ContextStore>
-		</>
-	);
-}
-
-const TextInput = ({ placeholder = "", actionId = 0 }) => {
-	//retrieve context
-	const context = useContext(CRUDtableContext) as singleColumnCRUDTableContext;
-
-	const [input, setInput] = useState("");
-
-	const payload =
-		actionId === 0
-			? {
-					crudId: context.crudId,
-					mode: "create",
-					id: Math.max(...context.tableData.map((row) => row.id as number)) + 1,
-					colName: editableColumn,
-					newVal: "",
-					oldVal: "",
-				}
-			: context.crudQueue.find((payload) => payload.crudId === actionId);
-
-	if (!payload) {
-		console.error("payload not found");
-		return null;
-	}
+const TextInput = ({
+	mode,
+	id,
+	colName,
+	placeholder,
+	defaultVal,
+	dispatch,
+	hooks,
+}: {
+	mode: string;
+	id: number;
+	colName: string;
+	placeholder: string;
+	defaultVal: string;
+	dispatch: (action: { type: string; payload: payload }) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	hooks: { [key: string]: (...args: any) => void };
+}) => {
+	//input string state
+	const [input, setInput] = useState(defaultVal);
 
 	return (
 		<input
@@ -124,132 +128,48 @@ const TextInput = ({ placeholder = "", actionId = 0 }) => {
 			className="w-full p-2 bg-slate-100 text-slate-700"
 			onChange={(e) => setInput(e.target.value)}
 			onBlur={() => {
-				payload.newVal = input;
-				context.setCrudQueue;
-				//context.dispatch();
+				dispatch({
+					type: mode,
+					payload: {
+						id: id,
+						colName: colName,
+						newVal: input,
+						oldVal: defaultVal,
+						hooks: hooks,
+					},
+				});
 				setInput("");
 			}}
 		/>
 	);
 };
-const CRUDReducer = (tableData: tableData, mode: mode) => {
-	//retrieve context
-	const context = useContext(CRUDtableContext) as singleColumnCRUDTableContext;
 
-	switch (mode) {
-		case "create": {
-			//exit if no value is passed
-			if (context.dispatchRef.current.newVal === "") {
-				//context.setTextInput("");
-				return [...tableData];
-			}
-
-			//create new id
-			const newId =
-				Math.max(...tableData.map((row) => Number.parseInt(row.id as string))) +
-				1;
-			const newRow: { [key: string]: string | number } = {
-				id: newId,
-			};
-			newRow[context.dispatchRef.current.colName] =
-				context.dispatchRef.current.newVal;
-			tableData.push(newRow);
-
-			// payload.hooks.setToastPayload({
-			// 	mode: "create",
-			// 	id: newRow.id,
-			// 	colName: "",
-			// 	newVal: payload.newVal,
-			// 	oldVal: "",
-			// });
-
-			//display toast
-			context.setShowToast(true);
-
-			return [...tableData];
-		}
-		case "update": {
-			//exit if no changes are made
-			if (
-				context.dispatchRef.current.oldVal ===
-				context.dispatchRef.current.newVal
-			) {
-				//hide TextInput
-				context.setEditId(0);
-				return [...tableData];
-			}
-
-			for (const row of tableData) {
-				if (row.id === context.dispatchRef.current.id) {
-					row[context.dispatchRef.current.colName] =
-						context.dispatchRef.current.newVal;
-					break;
-				}
-			}
-			//hide TextInput
-			context.setEditId(0);
-
-			//display toast
-			// payload.hooks.setToastPayload({
-			// 	mode: "update",
-			// 	id: payload.id,
-			// 	colName: payload.colName,
-			// 	newVal: payload.newVal,
-			// 	oldVal: payload.oldVal,
-			// });
-
-			//display toast
-			context.setShowToast(true);
-			return [...tableData];
-		}
-
-		case "delete": {
-			//display toast
-			// context.setToastPayload({
-			// 	mode: "delete",
-			// 	id: payload.id,
-			// 	colName: "",
-			// 	newVal: "",
-			// 	oldVal: payload.oldVal,
-			// 	backup: payload.backupData,
-			// });
-
-			//display toast
-			context.setShowToast(true);
-			return [
-				...tableData.filter((row) => row.id !== context.dispatchRef.current.id),
-			];
-		}
-
-		case "undoCreate": {
-			return [
-				...tableData.filter((row) => row.id !== context.dispatchRef.current.id),
-			];
-		}
-
-		case "undoUpdate": {
-			for (const row of tableData) {
-				if (row.id === context.dispatchRef.current.id) {
-					row[context.dispatchRef.current.colName] =
-						context.dispatchRef.current.oldVal;
-					break;
-				}
-			}
-			return [...tableData];
-		}
-		case "undoDelete": {
-			return [...context.tableDataRef.current];
-		}
-		default:
-			return tableData;
-	}
-};
-
-function Toast() {
-	//retrieve context
-	const context = useContext(CRUDtableContext) as singleColumnCRUDTableContext;
-
-	//Progress bar state & ref
+const Toast = ({
+	mode,
+	id,
+	colName,
+	newVal,
+	oldVal,
+	backup = null,
+	setShowToast,
+	setToastPayload,
+}: {
+	mode: string;
+	id: number;
+	colName: string;
+	newVal: string;
+	oldVal: string;
+	backup: tableData | null;
+	setShowToast: (showToast: boolean) => void;
+	setToastPayload: (toastPayload: {
+		mode: string;
+		id: number;
+		colName: string;
+		newVal: string;
+		oldVal: string;
+	}) => void;
+}) => {
+	// const timeoutRef = useRef<number | null>(null);
 	const intervalRef = useRef<number | null>(null);
 	const [progress, setProgress] = useState(100);
 
@@ -277,49 +197,19 @@ function Toast() {
 	});
 */
 	//message & styles
-	const message: Partial<{ [key in mode]: string }> = {
-		create: `Added id:${context.dispatchRef.current.id} to the list.`,
-		update: `id:${context.dispatchRef.current.id} updated column ${context.dispatchRef.current.colName} from ${context.dispatchRef.current.oldVal} to ${context.dispatchRef.current.newVal}.`,
-		delete: `Deleted id:${context.dispatchRef.current.id} "${context.dispatchRef.current.oldVal}"`,
+	const message = {
+		create: `Added id:${id} to the list.`,
+		update: `id:${id} updated column ${colName} from ${oldVal} to ${newVal}.`,
+		delete: `Deleted id:${id} "${oldVal}"`,
 	};
 
-<<<<<<< HEAD
-=======
-	const style: Partial<{ [key in mode]: string }> = {
-		create: "alert-success",
-		update: "alert-info",
-		delete: "alert-warning",
-	};
-
-	const undo: {
-		[key in Extract<mode, "create" | "update" | "delete">]: Extract<
-			mode,
-			"undoCreate" | "undoUpdate" | "undoDelete"
-		>;
-	} = {
-		create: "undoCreate",
-		update: "undoUpdate",
-		delete: "undoDelete",
-	};
-
->>>>>>> context
 	return (
 		<div className="toast toast-bottom toast-start text-sm w-fit rounded-sm">
 			<div className=" rounded-sm bg-slate-300 text-slate-900 h-auto p-4">
 				<div className="flex gap-4 justify-items-center align-middle justify-center">
+					<div className="">{message[mode as keyof typeof message]}</div>
 					<div className="">
-						{message[context.dispatchRef.current.mode as keyof typeof message]}
-					</div>
-					<div className="">
-						<button
-							type="button"
-							className="btn"
-							onClick={() =>
-								context.dispatch(
-									undo[context.dispatchRef.current.mode as keyof typeof undo],
-								)
-							}
-						>
+						<button type="button" className="btn">
 							UNDO
 						</button>
 					</div>
@@ -334,14 +224,56 @@ function Toast() {
 			</div>
 		</div>
 	);
-}
+};
 
-function SingleColumnCRUDTable() {
-	//retrieve context
-	const context = useContext(CRUDtableContext) as singleColumnCRUDTableContext;
+const CrudTable = () => {
+	//store the data into a state
+	//const [tableData, setTableData] = useState(recipes);
+
+	//CRUD action fn.
+	//manage the state of tableData displayed on the screen
+	const [tableData, dispatch] = useReducer(crudReducer, recipes);
+
+	//edit mode
+	const [editId, setEditId] = useState(0);
+
+	//reset add entry input to blank
+	const [defaultVal, setDefaultVal] = useState("");
+
+	//display toast
+	const [showToast, setShowToast] = useState(false);
+	const [toastPayload, setToastPayload] = useState({
+		mode: "",
+		id: 0,
+		colName: "",
+		newVal: "",
+		oldVal: "",
+	});
+
+	//backup tableData for undoDelete
+	const backupTableData = useRef(tableData);
 
 	return (
 		<>
+			<h1 className="text-2xl font-bold my-8 mx-4">Repatroire</h1>
+
+			{/*-- new entry --*/}
+			<div className="w-1/2 m-4">
+				<TextInput
+					mode="create"
+					id={0} //recalculate id in reducer fn
+					placeholder="Add new entry"
+					colName="name"
+					defaultVal={defaultVal}
+					dispatch={dispatch}
+					hooks={{
+						setDefaultVal: setDefaultVal,
+						setShowToast: setShowToast,
+						setToastPayload: setToastPayload,
+					}}
+				/>
+			</div>
+
 			<div className="w-fit m-4 ">
 				<table className="table bg-gray-600 rounded-none">
 					{/* table header */}
@@ -355,88 +287,86 @@ function SingleColumnCRUDTable() {
 
 					{/* table body */}
 					<tbody>
-						{context.tableData.map(
-							(recipe: { [key: string]: string | number }) => (
-								<tr key={recipe.id} className="hover:bg-gray-500">
-									{columns.map((col) => {
-										//display control column
-										if (col === "control") {
-											return (
-												<td key={`${recipe.id}-${col}`}>
-													{/* display edit button  */}
-													<button
-														onClick={() =>
-															context.setEditId(recipe.id as number)
-														}
-														type="button"
-														className="px-2 text-yellow-300"
-													>
-														{context.editId === 0 && (
-															<FontAwesomeIcon icon={["fas", "pen"]} />
-														)}
-													</button>
-
-													{/* display delete button  */}
-													<button
-														onClick={() => {
-															context.setCrudQueue([
-																...context.crudQueue,
-																{
-																	mode: "delete",
-																	id: recipe.id as number,
-																	colName: "",
-																	newVal: "",
-																	oldVal: recipe[col] as string,
-																},
-															]);
-
-															context.dispatch("delete");
-														}}
-														type="button"
-														className="px-2 text-red-300"
-													>
-														<FontAwesomeIcon icon={["fas", "trash"]} />
-													</button>
-												</td>
-											);
-										}
-
-										// display TextInput field when edit button is clicked
-										if (col !== "id" && recipe.id === context.editId) {
-											//push update field info to the crudQueue array
-											context.setCrudQueue([
-												...context.crudQueue,
-												{
-													mode: "update",
-													id: recipe.id,
-													colName: col,
-													newVal: "",
-													oldVal: recipe[col] as string,
-												},
-											]);
-											return (
-												<td key={col} className="w-auto">
-													<TextInput />
-												</td>
-											);
-										}
-
-										// display table data
+						{tableData.map((recipe: { [key: string]: string | number }) => (
+							<tr key={recipe.id} className="hover:bg-gray-500">
+								{columns.map((col) => {
+									if (col === "control") {
 										return (
-											<td key={`${recipe.id}-${col}`} className="w-auto">
-												{recipe[col]}
+											<td key={`${recipe.id}-${col}`}>
+												<button
+													onClick={() => setEditId(recipe.id as number)}
+													type="button"
+													className="px-2 text-yellow-300"
+												>
+													{editId === 0 && (
+														<FontAwesomeIcon icon={["fas", "pen"]} />
+													)}
+												</button>
+												<button
+													onClick={() =>
+														dispatch({
+															type: "delete",
+															payload: {
+																id: recipe.id as number,
+																colName: "",
+																newVal: "",
+																oldVal: recipe.name as string,
+																backupData: backupTableData.current,
+																hooks: {
+																	setShowToast: setShowToast,
+																	setToastPayload: setToastPayload,
+																},
+															},
+														})
+													}
+													type="button"
+													className="px-2 text-red-300"
+												>
+													<FontAwesomeIcon icon={["fas", "trash"]} />
+												</button>
 											</td>
 										);
-									})}
-								</tr>
-							),
-						)}
+									}
+									return col !== "id" && recipe.id === editId ? (
+										<td key={col} className="w-auto">
+											<TextInput
+												mode="update"
+												id={recipe.id as number}
+												placeholder=""
+												colName={col}
+												defaultVal={recipe[col] as string}
+												dispatch={dispatch}
+												hooks={{
+													setEditId: setEditId,
+													setShowToast: setShowToast,
+													setToastPayload: setToastPayload,
+												}}
+											/>
+										</td>
+									) : (
+										<td key={`${recipe.id}-${col}`} className="w-auto">
+											{recipe[col]}
+										</td>
+									);
+								})}
+							</tr>
+						))}
 					</tbody>
 				</table>
 			</div>
-			{context.showToast && <Toast />}
+			{showToast && (
+				<Toast
+					mode={toastPayload.mode}
+					id={toastPayload.id}
+					colName={toastPayload.colName}
+					newVal={toastPayload.newVal}
+					oldVal={toastPayload.oldVal}
+					setShowToast={setShowToast}
+					setToastPayload={setToastPayload}
+				/>
+			)}
 		</>
 	);
-}
+};
 
-export default CRUDTable;
+export default CrudTable;

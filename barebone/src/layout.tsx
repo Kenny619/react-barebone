@@ -1,5 +1,5 @@
 import LayoutHeaderFooterSideMenu from "./components/layouts/header-footer-sidemenu.tsx";
-function App() {
+function Layout() {
 	return (
 		<>
 			<LayoutHeaderFooterSideMenu />
@@ -7,4 +7,4 @@ function App() {
 	);
 }
 
-export default App;
+export default Layout;
