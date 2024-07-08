@@ -1,10 +1,26 @@
+import sideNavConfig from "../../pageMenu";
+import NavSingle from "./navSingle";
+import NavParent from "./navParent";
+import NavSubmenu from "./navSubmenu";
+
 function SideNav() {
 	return (
-		<div>
-			<nav className="hidden sm:hidden md:flex w-auto h-full bg-neutral-400">
-				sidenav
+		<ul className="menu p-2 m-2 bg-base-100 w-fit">
+			<nav>
+				{sideNavConfig.type === "single" &&
+					sideNavConfig.pages.map((page) => (
+						<NavSingle {...page} key={page.path} />
+					))}
+				{sideNavConfig.type === "parent" &&
+					sideNavConfig.pages.map((page) => (
+						<NavParent {...page} key={page.parent} />
+					))}
+				{sideNavConfig.type === "submenu" &&
+					sideNavConfig.pages.map((page) => (
+						<NavSubmenu {...page} key={page.parent} />
+					))}
 			</nav>
-		</div>
+		</ul>
 	);
 }
 

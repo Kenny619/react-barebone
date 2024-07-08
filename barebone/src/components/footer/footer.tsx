@@ -1,18 +1,18 @@
+import { Outlet, Link } from "react-router-dom";
+
 const Footer = () => {
 	return (
 		<>
 			<footer className="footer bg-gray-500 text-base-content p-4">
 				<nav>
 					<h6 className="footer-title">Services</h6>
-					<a className="link link-hover" href="./services">
-						Branding
-					</a>
+					<Link to="/">Home</Link>
+					<Link to="toast">Toast</Link>
+					<Link to="crud">Crud</Link>
 				</nav>
+
 				<nav>
 					<h6 className="footer-title">Company</h6>
-					<a className="link link-hover" href="./about">
-						About us
-					</a>
 				</nav>
 				<nav>
 					<h2 className="footer-title font-bold">Social</h2>

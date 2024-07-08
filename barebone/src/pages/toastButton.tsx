@@ -29,6 +29,7 @@ function ToastButton() {
 					setToasts([
 						...toasts,
 						{
+							type: "info",
 							toastId: toastId,
 							closeButton: true,
 							text: `test toast ${toastId}`,

@@ -1,6 +1,6 @@
 const Header = () => {
 	return (
-		<div className="navbar min-h-14 p-2 bg-base-100 w-full h-auto flex flex-row">
+		<div className="navbar min-h-14 p-2 bg-slate-900 w-full h-auto flex flex-row">
 			<div className="sm:flex md:hidden lg:hidden xl:hidden 2xl:hidden">
 				<button
 					className="md:hidden lg:hidden xl:hidden 2xl:hidden btn btn-square btn-ghost"

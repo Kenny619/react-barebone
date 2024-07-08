@@ -1,7 +1,36 @@
+//sideNav
+//https://daisyui.com/components/menu/  
+type navSingle = {
+	path: string;
+	linkText?: string;
+	icon?: string;
+};
+
+type navParent = {
+	parent: string;
+	children: navSingle[];
+};
+
+type navSubmenu = {
+	parent: string;
+	children: Array<navParent | navSingle>;
+};
+
+type navMenu = {
+	type: "single"
+	pages: navSingle[]
+} | {
+	type: "parent"
+	pages: navParent[]
+} | {
+	type: "submenu"
+	pages: navSubmenu[]
+};
 //Toast
 
 type ToastProps = {
 	toastId: number;
+	type: "success" | "error" | "info" | "warning" | "default";
 	closeButton: boolean;
 	timer: {
 		enabled: boolean;

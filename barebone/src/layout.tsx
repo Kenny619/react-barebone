@@ -1,10 +1,10 @@
 //import { Routes, Route } from "react-router-dom";
 import DefaultLayout from "./components/layouts/defaultLayout.tsx";
 
-function Layout(props: { children: React.ReactNode }) {
+function Layout() {
 	return (
 		<>
-			<DefaultLayout>{props.children}</DefaultLayout>
+			<DefaultLayout />
 		</>
 	);
 }
