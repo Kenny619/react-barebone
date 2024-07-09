@@ -5,7 +5,7 @@ import NavSubmenu from "./navSubmenu";
 
 function SideNav() {
 	return (
-		<ul className="menu p-2 m-2 bg-base-100 w-fit">
+		<ul className="menu p-2 m-0 bg-base-100 w-fit h-lvh">
 			<nav>
 				{sideNavConfig.type === "single" &&
 					sideNavConfig.pages.map((page) => (

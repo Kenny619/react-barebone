@@ -1,7 +1,8 @@
 //sideNav
-//https://daisyui.com/components/menu/  
+//https://daisyui.com/components/menu/
 type navSingle = {
 	path: string;
+	component: React.ReactNode;
 	linkText?: string;
 	icon?: string;
 };
@@ -16,16 +17,19 @@ type navSubmenu = {
 	children: Array<navParent | navSingle>;
 };
 
-type navMenu = {
-	type: "single"
-	pages: navSingle[]
-} | {
-	type: "parent"
-	pages: navParent[]
-} | {
-	type: "submenu"
-	pages: navSubmenu[]
-};
+type navMenu =
+	| {
+			type: "single";
+			pages: navSingle[];
+	  }
+	| {
+			type: "parent";
+			pages: navParent[];
+	  }
+	| {
+			type: "submenu";
+			pages: navSubmenu[];
+	  };
 //Toast
 
 type ToastProps = {
