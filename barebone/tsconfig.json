@@ -14,12 +14,26 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 
+		//path
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"],
+			"@/assets/*": ["./src/assets/*"],
+			"@/components/*": ["./src/components/*"],
+			"@/config/*": ["./src/config/*"],
+			"@/pages/*": ["./src/pages/*"],
+			"@/router/*": ["./src/router/*"],
+			"@/states/*": ["./src/states/*"],
+			"@/styles/*": ["./src/styles/*"],
+			"@/types/*": ["./src/types/*"]
+		},
+
 		/* Linting */
 		"strict": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true
 	},
-	"include": ["src", "types"],
+	"include": ["src"],
 	"references": [{ "path": "./tsconfig.node.json" }]
 }

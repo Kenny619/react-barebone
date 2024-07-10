@@ -1,4 +1,4 @@
-import sideNavConfig from "../../pageMenu";
+import sideNavConfig from "../../config/menu.sideNav";
 import NavSingle from "./navSingle";
 import NavParent from "./navParent";
 import NavSubmenu from "./navSubmenu";

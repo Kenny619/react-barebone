@@ -1,5 +1,3 @@
-import React from "react";
-
 const res = await fetch("https://dummyjson.com/posts");
 const data = await res.json();
 const posts: {

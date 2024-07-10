@@ -1,4 +1,4 @@
-import ReviewButton from "../components/elements/reviewButtons";
+import ReviewButton from "../components/button/reviewButtons";
 import TitleText from "../components/elements/TitleText";
 import LeadText from "../components/elements/LeadText";
 
