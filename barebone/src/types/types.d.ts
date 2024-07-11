@@ -19,17 +19,18 @@ type navSubmenu = {
 
 type navMenu =
 	| {
-		type: "single";
-		pages: navSingle[];
-	}
+			type: "single";
+			pages: navSingle[];
+	  }
 	| {
-		type: "parent";
-		pages: navParent[];
-	}
+			type: "parent";
+			pages: navParent[];
+	  }
 	| {
-		type: "submenu";
-		pages: navSubmenu[];
-	};
+			type: "submenu";
+			pages: navSubmenu[];
+	  };
+
 //Toast
 
 type ToastProps = {
