@@ -12,18 +12,8 @@ import { createBrowserRouter } from "react-router-dom";
 import sideNavConfig from "../config/menu.sideNav";
 import ErrorPage from "./errorPage";
 import DefaultLayout from "../components/layouts/defaultLayout";
-
-function assertNavSingle(
-	item: navSingle | navParent | navSubmenu,
-): item is navSingle {
-	return "path" in item;
-}
-
-function assertNavParent(
-	item: navSingle | navParent | navSubmenu,
-): item is navParent {
-	return "children" in item;
-}
+import type { RouteObject } from "react-router-dom";
+import { assertNavSingle, assertNavParent } from "../helper/types/helper.type";
 
 const routerChildren = sideNavConfig.pages.flatMap((item) => {
 	//For type=single; return the path and element of each item
@@ -53,25 +43,16 @@ const routerChildren = sideNavConfig.pages.flatMap((item) => {
 				};
 			});
 		}
+		return [];
 	});
 });
-
-console.log(routerChildren);
-// const routerChildren = sideNavConfig.pages
-// 	.filter((item) => "path" in item)
-// 	.map((item): { path: string; element: React.ReactNode } => {
-// 		return {
-// 			path: (item as navSingle).path,
-// 			element: (item as navSingle).component,
-// 		};
-// 	});
 
 const router = createBrowserRouter([
 	{
 		path: "/",
 		element: <DefaultLayout />,
 		errorElement: <ErrorPage />,
-		children: routerChildren,
+		children: routerChildren as RouteObject[],
 	},
 ]);
 

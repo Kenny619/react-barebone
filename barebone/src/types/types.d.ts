@@ -1,5 +1,7 @@
 //sideNav
 //https://daisyui.com/components/menu/
+//import type icons from "../assets/icons/icons";
+
 type navSingle = {
 	path: string;
 	component: React.ReactNode;
