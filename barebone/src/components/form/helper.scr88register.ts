@@ -180,30 +180,17 @@ export const validateValue = async (
 
 
 export function isRegistable(register: RegisterConfig): boolean {
-    for (const [key, item] of Object.entries(register)) {
+    for (const item of Object.values(register)) {
         if (item.dependency !== undefined) {
             if (
                 register[item.dependency.key as keyof RegisterConfig].value !==
                 item.dependency.value
-            ) {
-                console.log(`skipped ${key} due to ${item.dependency.key} not being selected.`);
-                continue;
-            }
+            ) continue;
         }
 
-        if (assertText(item)) {
-            if (item.validatorApi.badgeStatus !== "Pass") {
-                console.log(`false due to ${key} badge state is ${item.validatorApi.badgeStatus}`);
-                return false;
-            }
-        }
-
-        if (assertSelect(item) && item.value === null) {
-            console.log(`false due to ${key} value is ${item.value}`);
-            return false;
-        }
+        if (assertText(item) && item.validatorApi.badgeStatus !== "Pass") return false;
+        if (assertSelect(item) && item.value === null) return false;
     }
-    console.log("fulfilled all requirement.  display the button");
     return true;
 }
 
