@@ -3,11 +3,15 @@ const TextInput = ({
 	placeholder = "",
 	bottomText = "",
 	color = "",
+	onChange = () => {},
+	onBlur = () => {},
 }: {
 	label: string;
 	placeholder: string;
 	bottomText: string;
 	color: string;
+	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	onBlur?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
 	return (
 		<>
@@ -15,9 +19,11 @@ const TextInput = ({
 				<input
 					type="text"
 					placeholder={placeholder}
-					className={`input input-bordered w-full max-w-xsl ${color}`}
+					className={`input input-bordered w-full max-w-xsl text-xs ${color}`}
 					id={label}
 					name={label}
+					onChange={onChange}
+					onBlur={onBlur}
 				/>
 				<div className="label">
 					<span className="label-text-alt">{bottomText}</span>

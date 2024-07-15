@@ -43,7 +43,7 @@ const sideNavConfig: navMenu = {
 				{
 					path: "/register",
 					component: <RegisterTable />,
-					linkText: "Register",
+					linkText: "Create new Scraper",
 					icon: icons.plus,
 				},
 			],

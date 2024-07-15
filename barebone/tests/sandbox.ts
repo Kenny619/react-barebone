@@ -1,14 +1,7 @@
-const ary = [
-	{ id: 1, name: "John" },
-	{ id: 2, name: "Jane" },
-	{ id: 3, name: "Jim" },
-];
+import { z } from "zod";
 
-for (const row of ary) {
-	if (row.id === 2) {
-		row.name = "Kenny";
-		break;
-	}
-}
+const str = "https://www.google.com";
+const regex = /^https?:\/\/.*/;
+const result = z.string().regex(regex);
 
-console.log(ary);
+console.log(result);

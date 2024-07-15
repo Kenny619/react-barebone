@@ -9,3 +9,22 @@ export function assertNavParent(
 ): item is navParent {
 	return "children" in item;
 }
+
+//scr88.register
+export function assertText(
+	value: RegisterConfig[keyof RegisterConfig],
+): value is BaseInput & TextInput {
+	return value.input.method === "text";
+}
+
+export function assertSelect(
+	value: RegisterConfig[keyof RegisterConfig],
+): value is BaseInput & SelectInput {
+	return value.input.method === "select";
+}
+
+export function assertToggle(
+	value: RegisterConfig[keyof RegisterConfig],
+): value is BaseInput & ToggleInput {
+	return value.input.method === "toggle";
+}

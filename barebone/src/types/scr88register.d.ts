@@ -1,21 +1,29 @@
 
 // type ValueTypes = "value" | "badgeStatus" | "errorMsg";
 
+type BadgeStatus = "Pending Input" | "Pass" | "Error";
+
 type BaseInput = {
     label: string;
     value: string | boolean | null;
-    preValidation?: string[] | null;
+    requirement?: string[];
+    dependency?: {
+        key: RegisterKeys;
+        value: string | null | boolean;
+    };
 }
-
+type TextInputTypes = "string" | "url" | "regex";
 type TextInput = {
     input: {
         method: "text";
         placeholder: string;
         defaultValue?: string;
+        type: TextInputTypes;
+        typeCheckResult: boolean | null;
     };
     validatorApi: {
         apiEndPoint: string | null;
-        badgeStatus: string | null;
+        badgeStatus: BadgeStatus;
         extracted: string | null;
         errorMsg: string | null;
     }
@@ -36,51 +44,32 @@ type SelectInput = {
     };
 };
 
-type SiteTypeChild = {
-    child: {
-        links: BaseInput & TextInput;
-        multiple: BaseInput & TextInput;
-    }
-}
-
-type NextPageTypeChild = {
-    child: {
-        last: BaseInput & TextInput & {
-            child: {
-                lastPageNumberRegExp: BaseInput & TextInput;
-            }
-        };
-        parameter: BaseInput & TextInput;
-        url: BaseInput & TextInput;
-        next: BaseInput & TextInput;
-    },
-}
-
-type TagFilteringChild = {
-    child: {
-        tags: BaseInput & TextInput;
-    }
-}
-
-type TagCollectChild = {
-    child: {
-        articleTagSelector: BaseInput & TextInput;
-    }
-}
 
 type RegisterConfig = {
     name: BaseInput & TextInput;
+    category: BaseInput & SelectInput;
     rootUrl: BaseInput & TextInput;
     entryUrl: BaseInput & TextInput;
     language: BaseInput & SelectInput;
-    siteType: BaseInput & SelectInput & SiteTypeChild;
-    nextPageType: BaseInput & SelectInput & NextPageTypeChild;
-    tagFiltering: BaseInput & ToggleInput & TagFilteringChild;
-    tagCollect: BaseInput & ToggleInput & TagCollectChild;
+    siteType: BaseInput & SelectInput;
+    links: BaseInput & TextInput;
+    multiple: BaseInput & TextInput;
+    nextPageType: BaseInput & SelectInput;
+    last: BaseInput & TextInput;
+    lastPageNumberRegExp: BaseInput & TextInput;
+    parameter: BaseInput & TextInput;
+    url: BaseInput & TextInput;
+    next: BaseInput & TextInput;
+    tagFiltering: BaseInput & ToggleInput;
+    tags: BaseInput & TextInput;
+    tagCollect: BaseInput & ToggleInput;
+    articleTagSelector: BaseInput & TextInput;
     articleTitleSelector: BaseInput & TextInput;
     articleBodySelector: BaseInput & TextInput;
     frequency: BaseInput & SelectInput;
 }
+
+type RegisterKeys = keyof RegisterConfig;
 
 // interface SubObject {
 //     label: string;

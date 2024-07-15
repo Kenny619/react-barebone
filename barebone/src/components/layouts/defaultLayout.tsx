@@ -10,7 +10,7 @@ function DefaultLayout() {
 		<div className="flex flex-col">
 			<DrawerContainer>
 				<Header />
-				<div className="flex flex-row">
+				<div className="flex flex-row ">
 					<div className="hidden md:block">
 						<SideNav />
 					</div>

@@ -10,7 +10,7 @@ import {
 function SingleBlock(page: navSingle) {
 	return (
 		<>
-			<li className="menu-item m-2 w-full pr-4 min-w-[140px]">
+			<li className="menu-item m-2 w-fit pr-4 ">
 				<Link to={page.path}>
 					{page.icon && (
 						<Svg
@@ -40,7 +40,7 @@ function ParentBlock(page: navParent) {
 
 function SideNav() {
 	return (
-		<ul className="menu p-2 m-0 bg-base-100 w-fit h-lvh">
+		<ul className="menu p-2 m-0 bg-base-100 h-lvh">
 			<nav>
 				{sideNavConfig.pages.map((page) =>
 					assertNavSingle(page) ? (
